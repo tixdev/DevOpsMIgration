@@ -20,9 +20,9 @@ This phase does not impact current operations and serves to set up the environme
 
 ---
 
-## 2. Migration Window (Day 0 - Downtime Start)
+## 2. Migration Window (May 15th at 17:00 - Downtime Start)
 
-The following activities require service interruption for developers and the "freezing" of data.
+The following activities require service interruption for developers and the "freezing" of data. **Downtime is scheduled to begin exactly on May 15th at 17:00.**
 
 *   **Freeze the Old System:**
     *   Send formal communication marking the start of downtime.
@@ -44,8 +44,8 @@ The following activities require service interruption for developers and the "fr
 Since we chose not to migrate the old identities ("Clean Slate"), security configurations and agents must be re-linked on the new server before reopening access.
 
 *   **Security and Access:**
-    *   Log into the new DevOps console using the administrator account.
-    *   Quickly populate the internal DevOps security groups by mapping them to the AD groups pre-created in Phase 1 (e.g., adding the AD group `AZDO_Developers` into the DevOps `Contributors` group).
+    *   Log into the new **Azure DevOps Web Portal (UI)** using the administrator account.
+    *   *Why this is necessary:* Although the AD groups were created in Phase 1, Azure DevOps does not automatically know what permissions they should have. You must manually "link" them by navigating to *Project Settings -> Security* and adding the new AD groups into the built-in DevOps security groups (e.g., adding `LTS_AZDO_Developers_Dynacos` into the DevOps `Contributors` group). Once this one-time mapping is done, all future user management is handled entirely via Active Directory.
 *   **CI/CD Reconfiguration (Agents):**
     *   Create new Agent Pools within DevOps.
     *   Generate administrative Personal Access Tokens (PAT).
