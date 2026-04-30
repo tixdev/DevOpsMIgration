@@ -1,90 +1,90 @@
-# Piano di Migrazione Azure DevOps Server
+# Azure DevOps Server Migration Plan
 
-Di seguito le macro-fasi per la migrazione cross-domain, strutturate in ordine **cronologico**, separando ciò che può essere svolto in anticipo dalle attività vincolate al momento del downtime.
-
----
-
-## 1. Attività Preparatorie (Giorni Precedenti al Downtime)
-
-Questa fase non impatta l'operatività corrente e serve ad allestire l'ambiente nel nuovo dominio per farsi trovare pronti il giorno della migrazione.
-
-*   **Provisioning Infrastruttura:** 
-    *   Creazione dei nuovi server virtuali (Azure DevOps e SQL Server).
-    *   Installazione dei prerequisiti OS (IIS, framework, database engine).
-    *   Provisioning delle nuove macchine (OS level) che ospiteranno i nuovi Build Agent.
-*   **Gestione Identità e Gruppi AD:** 
-    *   Creazione dei nuovi account di servizio nel nuovo dominio (es. `AZDO_SVC_Agent`).
-    *   Creazione dei nuovi Gruppi di Sicurezza AD e popolamento degli stessi con le utenze aziendali (vedi *Appendice*).
-*   **Pianificazione Downtime:** 
-    *   Concordare e comunicare in anticipo la finestra di "Downtime" ai team di sviluppo.
+Below are the macro-phases for the cross-domain migration, structured in **chronological** order, separating the preparatory activities from those bound to the downtime window.
 
 ---
 
-## 2. Finestra di Migrazione (Day 0 - Inizio Downtime)
+## 1. Preparatory Activities (Days Prior to Downtime)
 
-Le attività seguenti comportano l'interruzione del servizio per gli sviluppatori e il "congelamento" dei dati.
+This phase does not impact current operations and serves to set up the environment in the new domain, ensuring readiness for migration day.
 
-*   **Freeze del Vecchio Sistema:**
-    *   Comunicazione formale di inizio downtime.
-    *   Messa in quiescence del server DevOps esistente.
-    *   Arresto dei servizi DevOps e degli application pool IIS per impedire qualsiasi nuova connessione o modifica al codice/ticket.
-*   **Migrazione dei Dati (Database):**
-    *   Esecuzione del backup completo (Full Backup) del database di configurazione (`Tfs_Configuration`) e di tutte le Collection presenti nel vecchio SQL.
-    *   Trasferimento dei file di backup sul nuovo ambiente.
-    *   Ripristino dei database sulla nuova istanza SQL Server.
-*   **Setup del Nuovo Azure DevOps:**
-    *   Installazione dei binari di DevOps sul nuovo server.
-    *   Esecuzione del wizard di configurazione scegliendo la modalità "Application Tier Only", e puntando ai database appena ripristinati.
-    *   Impostazione della nuova Public URL del servizio.
+*   **Infrastructure Provisioning:**
+    *   Create the new virtual servers (Azure DevOps and SQL Server).
+    *   Install OS prerequisites (IIS, frameworks, database engine).
+    *   Provision the new machines (at the OS level) that will host the new Build Agents.
+*   **AD Identity and Group Management:**
+    *   Create new service accounts in the new domain (e.g., `AZDO_SVC_Agent`).
+    *   Create new AD Security Groups and populate them with the appropriate corporate users (see the *Appendix*).
+*   **Downtime Planning:**
+    *   Agree upon and communicate the "Downtime" window to the development teams in advance.
 
 ---
 
-## 3. Riconfigurazione Applicativa (Day 0 - Durante il Downtime)
+## 2. Migration Window (Day 0 - Downtime Start)
 
-Poiché abbiamo scelto di non migrare le vecchie identità ("Da Zero"), le configurazioni di sicurezza e gli agenti vanno ricollegati sul nuovo server prima di riaprire gli accessi.
+The following activities require service interruption for developers and the "freezing" of data.
 
-*   **Sicurezza e Accessi:**
-    *   Accesso alla nuova console DevOps con l'account amministratore.
-    *   Ripopolamento rapido dei gruppi di sicurezza di DevOps agganciandoli ai gruppi AD pre-creati nella fase 1 (es. inserendo il gruppo AD `AZDO_Developers` nel gruppo DevOps `Contributors`).
-*   **Riconfigurazione CI/CD (Agenti):**
-    *   Creazione dei nuovi Agent Pool all'interno di DevOps.
-    *   Generazione dei Personal Access Token (PAT) amministrativi.
-    *   Sulle macchine agent (preparate nella fase 1), download del client, installazione e registrazione collegandoli ai nuovi Pool.
-
----
-
-## 4. Collaudo e Go-Live (Day 0/1 - Fine Downtime)
-
-Attività finali di verifica per ripristinare l'operatività aziendale in sicurezza.
-
-*   **Collaudo Tecnico (Smoke Test):**
-    *   Verifica che le utenze AD create in fase 1 riescano a loggarsi.
-    *   Test di visibilità dei repository e delle board.
-    *   **Verifica Ambiente di Sviluppo (VDI):** Dalle nuove macchine di sviluppo (VDI), effettuare il git clone del repository `dynacos`, lanciare una build in locale e avviare l'applicativo per validare il workflow dello sviluppatore (autenticazione git, scaricamento pacchetti e compilazione).
-    *   Esecuzione manuale di una pipeline **mono (legacy)** per confermare che i nuovi agent comunichino correttamente con il server DevOps. *(Nota: il collaudo delle pipeline relative alle API sarà eseguibile soltanto al completamento della Fase 5).*
-*   **Apertura del Servizio:**
-    *   Comunicazione ufficiale di fine downtime a tutti i team, condividendo la nuova Public URL.
+*   **Freeze the Old System:**
+    *   Send formal communication marking the start of downtime.
+    *   Put the existing DevOps server into quiescence mode.
+    *   Stop Azure DevOps services and IIS application pools to prevent any new connections or modifications to code/tickets.
+*   **Data Migration (Databases):**
+    *   Perform a Full Backup of the configuration database (`Tfs_Configuration`) and all Collection databases residing on the old SQL instance.
+    *   Transfer the backup files to the new environment.
+    *   Restore the databases onto the new SQL Server instance.
+*   **New Azure DevOps Setup:**
+    *   Install the DevOps binaries on the new server.
+    *   Run the configuration wizard, selecting "Application Tier Only" mode, pointing to the newly restored databases.
+    *   Set the service's new Public URL.
 
 ---
 
-## 5. Attività Post Go-Live
+## 3. Application Reconfiguration (Day 0 - During Downtime)
 
-Dopo aver ripristinato l'operatività principale di Azure DevOps, è necessario adeguare le pipeline e i repository esterni che gestiscono le configurazioni di deployment per allinearli alla nuova infrastruttura.
+Since we chose not to migrate the old identities ("Clean Slate"), security configurations and agents must be re-linked on the new server before reopening access.
 
-*   **Migrazione Repository Configurazioni di Deployment:**
-    *   **Clonazione (Sorgente):** Recupero dei repository dal server storico `git.corner.ch` (attualmente sotto l'ambiente *restricted*).
-    *   **Rinominazione Progetto:** Cambio logico e fisico del namespace/progetto da `win_config` (vecchio) a `sys_conf` (nuovo).
-    *   **Push (Destinazione):** Caricamento dei repository migrati sul nuovo server Bitbucket associato all'ambiente *ittest*.
-    *   **Adeguamento Script Cake:** Modifica dei file `build.cake` (o script di deploy Cake correlati) affinché le operazioni di push e tagging automatico avvengano sui nuovi repository Bitbucket anziché su quelli vecchi.
-    *   **Aggiornamento Azure DevOps:** Modifica delle *Service Connection* o dei task YAML all'interno delle Release Pipeline affinché peschino i file di configurazione (`sys_conf`) dal nuovo repository Bitbucket (*ittest*) anziché dal vecchio nodo restricted.
-    *   **Collaudo Pipeline API:** A questo punto, avviare l'esecuzione manuale delle pipeline API per confermare il successo della migrazione dei repo di configurazione e la corretta esecuzione del tagging via Cake.
+*   **Security and Access:**
+    *   Log into the new DevOps console using the administrator account.
+    *   Quickly populate the internal DevOps security groups by mapping them to the AD groups pre-created in Phase 1 (e.g., adding the AD group `AZDO_Developers` into the DevOps `Contributors` group).
+*   **CI/CD Reconfiguration (Agents):**
+    *   Create new Agent Pools within DevOps.
+    *   Generate administrative Personal Access Tokens (PAT).
+    *   On the agent machines (prepared in Phase 1), download the client, install it, and register the agents by linking them to the new Pools.
 
 ---
 
-## Appendice: Gestione Permessi (RBAC)
+## 4. Testing and Go-Live (Day 0/1 - End of Downtime)
 
-Per mantenere il runbook puramente operativo, tutte le logiche di profilazione, la *Naming Convention* dei gruppi AD (`LTS_AZDO_*`) e le specifiche matrici dei permessi suddivise per progetto sono state estratte e documentate nel file separato:
+Final verification activities to safely restore business operations.
 
-👉 **[Consulta il documento RBAC](file:///Users/tizianocrisci/DevOpsMIgration/rbac.md)**
+*   **Technical Validation (Smoke Test):**
+    *   Verify that the AD users created in Phase 1 can log in successfully.
+    *   Test the visibility of repositories and boards.
+    *   **Development Environment Verification (VDI):** From the new development virtual machines (VDI), perform a git clone of the `dynacos` repository, run a local build, and start the application to validate the developer workflow (git authentication, package restoration, and compilation).
+    *   Manually execute a **mono (legacy)** pipeline to confirm that the new agents are communicating correctly with the DevOps server. *(Note: API-related pipeline testing will only be executable upon completion of Phase 5).*
+*   **Service Reopening:**
+    *   Send official communication marking the end of downtime to all teams, sharing the new Public URL.
 
-I gruppi AD elencati nel documento RBAC **devono essere creati e popolati su Active Directory durante la Fase 1**, in modo da essere pronti all'uso per la mappatura prevista in Fase 3.
+---
+
+## 5. Post Go-Live Activities
+
+After restoring the main Azure DevOps operations, it is necessary to adapt the external repositories and pipelines managing deployment configurations to align with the new infrastructure.
+
+*   **Deployment Configurations Repository Migration:**
+    *   **Clone (Source):** Retrieve the repositories from the historical server `git.corner.ch` (currently under the *restricted* environment).
+    *   **Project Renaming:** Logically and physically change the namespace/project from `win_config` (old) to `sys_conf` (new).
+    *   **Push (Destination):** Push the migrated repositories to the new Bitbucket server associated with the *ittest* environment.
+    *   **Cake Script Adaptation:** Modify the `build.cake` files (or related Cake deployment scripts) so that automatic push and tagging operations occur on the new Bitbucket repositories rather than the old ones.
+    *   **Azure DevOps Update:** Modify the *Service Connections* or YAML tasks within the Release Pipelines so they fetch configuration files (`sys_conf`) from the new Bitbucket repository (*ittest*) instead of the old restricted node.
+    *   **API Pipeline Testing:** At this point, manually trigger the API pipelines to confirm the successful migration of the configuration repos and the correct execution of tagging via Cake.
+
+---
+
+## Appendix: Permissions Management (RBAC)
+
+To keep the runbook purely operational, all profiling logic, the AD group *Naming Convention* (`LTS_AZDO_*`), and the specific project-based permission matrices have been extracted and documented in a separate file:
+
+👉 **[View the RBAC document](file:///Users/tizianocrisci/DevOpsMIgration/rbac.md)**
+
+The AD groups listed in the RBAC document **must be created and populated in Active Directory during Phase 1**, so they are ready to be used for mapping during Phase 3.
