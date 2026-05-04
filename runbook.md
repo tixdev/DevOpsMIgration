@@ -45,7 +45,7 @@ Since we chose not to migrate the old identities ("Clean Slate"), security confi
 
 *   **Security and Access:**
     *   Log into the new **Azure DevOps Web Portal (UI)** using the administrator account.
-    *   *Why this is necessary:* Although the AD groups were created in Phase 1, Azure DevOps does not automatically know what permissions they should have. You must manually "link" them by navigating to *Project Settings -> Security* and adding the new AD groups into the built-in DevOps security groups (e.g., adding `LTS_AZDO_Developers_Dynacos` into the DevOps `Contributors` group). Once this one-time mapping is done, all future user management is handled entirely via Active Directory.
+    *   *Why this is necessary:* Although the AD groups were created in Phase 1, Azure DevOps does not automatically know what permissions they should have. You must manually "link" them by navigating to *Project Settings -> Security* and adding the new AD groups into the built-in DevOps security groups (e.g., adding `LTF_AZDO_Developers_Dynacos` into the DevOps `Contributors` group). Once this one-time mapping is done, all future user management is handled entirely via Active Directory.
 *   **CI/CD Reconfiguration (Agents):**
     *   Create new Agent Pools within DevOps.
     *   Generate administrative Personal Access Tokens (PAT).
@@ -83,7 +83,7 @@ After restoring the main Azure DevOps operations, it is necessary to adapt the e
 
 ## Appendix: Permissions Management (RBAC)
 
-To keep the runbook purely operational, all profiling logic, the AD group *Naming Convention* (`LTS_AZDO_*`), and the specific project-based permission matrices have been extracted and documented in a separate file:
+To keep the runbook purely operational, all profiling logic, the AD group *Naming Convention* (`LTF_AZDO_*`), and the specific project-based permission matrices have been extracted and documented in a separate file:
 
 👉 **[View the RBAC document](file:///Users/tizianocrisci/DevOpsMIgration/rbac.md)**
 
